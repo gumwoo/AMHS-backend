@@ -150,6 +150,7 @@ public class SimulationService {
                 request.getRequestId(),
                 fromNodeId,
                 toNodeId,
+                edgeId,
                 now,
                 estimateTravelSeconds(route, edgeId)
         ));

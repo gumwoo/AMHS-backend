@@ -26,6 +26,9 @@ public class OhtMoveEvent {
     private String toNodeId;
 
     @Column(nullable = false)
+    private String edgeId;
+
+    @Column(nullable = false)
     private OffsetDateTime occurredAt;
 
     @Column(nullable = false)
@@ -40,6 +43,7 @@ public class OhtMoveEvent {
             Long requestId,
             String fromNodeId,
             String toNodeId,
+            String edgeId,
             OffsetDateTime occurredAt,
             long travelSeconds
     ) {
@@ -48,6 +52,7 @@ public class OhtMoveEvent {
         this.requestId = requestId;
         this.fromNodeId = fromNodeId;
         this.toNodeId = toNodeId;
+        this.edgeId = edgeId;
         this.occurredAt = occurredAt;
         this.travelSeconds = travelSeconds;
     }
@@ -70,6 +75,10 @@ public class OhtMoveEvent {
 
     public String getToNodeId() {
         return toNodeId;
+    }
+
+    public String getEdgeId() {
+        return edgeId;
     }
 
     public OffsetDateTime getOccurredAt() {
