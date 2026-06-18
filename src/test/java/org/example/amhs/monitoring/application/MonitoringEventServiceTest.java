@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import tools.jackson.databind.ObjectMapper;
 
 @ActiveProfiles("test")
 @SpringBootTest
@@ -17,6 +18,9 @@ class MonitoringEventServiceTest {
 
     @Autowired
     private MonitoringEventService monitoringEventService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Test
     void SSE_payload는_계약_필드와_이벤트_상세_필드를_가진다() {
@@ -71,5 +75,22 @@ class MonitoringEventServiceTest {
                 .containsEntry("alertSeverity", "WARNING")
                 .containsEntry("alertTitle", "반송 지연")
                 .containsEntry("alertMessage", "반송 요청 1001이 지연 기준을 초과했습니다.");
+    }
+
+    @Test
+    void SSE_payload_JSON에는_공통_필드와_상세_필드가_함께_포함된다() throws Exception {
+        MonitoringEventPayload payload = monitoringEventService.createPayload(
+                DomainEventType.OHT_MOVED,
+                OffsetDateTime.parse("2026-06-18T15:30:00+09:00"),
+                Map.of("ohtId", "OHT-01")
+        );
+
+        String json = objectMapper.writeValueAsString(payload);
+
+        assertThat(json)
+                .contains("\"eventId\"")
+                .contains("\"eventType\":\"OHT_MOVED\"")
+                .contains("\"occurredAt\"")
+                .contains("\"ohtId\":\"OHT-01\"");
     }
 }

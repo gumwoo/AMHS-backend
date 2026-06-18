@@ -145,7 +145,7 @@ public class MonitoringEventService {
             case TRANSFER_DELAYED -> "반송 요청 " + valueOf(data, "requestId") + "이 지연 기준을 초과했습니다.";
             case TRANSFER_FAILED -> "반송 요청 " + valueOf(data, "requestId") + "이 실패했습니다.";
             case OHT_ERROR_OCCURRED -> "OHT " + valueOf(data, "ohtId") + "에서 오류가 발생했습니다.";
-            case EDGE_BLOCKED -> "FAB 엣지 " + valueOf(data, "edgeId") + "가 차단되었습니다.";
+            case EDGE_BLOCKED -> "FAB 구간 " + valueOf(data, "edgeId") + "가 차단되었습니다.";
             case ROUTE_NOT_FOUND -> "반송 요청 " + valueOf(data, "requestId") + "의 이동 경로를 찾을 수 없습니다.";
             default -> titleOf(eventType) + " 이벤트가 발생했습니다.";
         };

@@ -1,9 +1,9 @@
 package org.example.amhs.monitoring.dto;
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import org.example.amhs.monitoring.event.DomainEventType;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
 
 public class MonitoringEventPayload {
 
@@ -28,11 +28,23 @@ public class MonitoringEventPayload {
         return eventId;
     }
 
+    public String getEventId() {
+        return eventId;
+    }
+
     public DomainEventType eventType() {
         return eventType;
     }
 
+    public DomainEventType getEventType() {
+        return eventType;
+    }
+
     public OffsetDateTime occurredAt() {
+        return occurredAt;
+    }
+
+    public OffsetDateTime getOccurredAt() {
         return occurredAt;
     }
 

@@ -6,7 +6,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record AmhsProperties(
         Monitoring monitoring,
         Simulation simulation,
-        Analytics analytics
+        Analytics analytics,
+        Demo demo
 ) {
 
     public record Monitoring(
@@ -25,6 +26,11 @@ public record AmhsProperties(
 
     public record Analytics(
             long delayThresholdSeconds
+    ) {
+    }
+
+    public record Demo(
+            long tickIntervalMs
     ) {
     }
 }
