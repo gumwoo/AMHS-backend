@@ -32,7 +32,10 @@ public class RoutingService {
         this.fabEdgeRepository = fabEdgeRepository;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(
+            readOnly = true,
+            noRollbackFor = {RouteNotFoundException.class, ResourceNotFoundException.class}
+    )
     public RouteResult findShortestPath(String sourceNodeId, String destinationNodeId) {
         validateNodeExists(sourceNodeId);
         validateNodeExists(destinationNodeId);
