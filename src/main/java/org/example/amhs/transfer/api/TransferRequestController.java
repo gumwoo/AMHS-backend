@@ -1,5 +1,6 @@
 package org.example.amhs.transfer.api;
 
+import jakarta.validation.Valid;
 import java.time.OffsetDateTime;
 import org.example.amhs.common.response.ApiResponse;
 import org.example.amhs.common.response.PageResponse;
@@ -36,7 +37,7 @@ public class TransferRequestController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/api/transfer-requests")
-    ApiResponse<TransferRequestResponse> create(@RequestBody CreateTransferRequestRequest request) {
+    ApiResponse<TransferRequestResponse> create(@Valid @RequestBody CreateTransferRequestRequest request) {
         return ApiResponse.ok(transferRequestService.create(request));
     }
 

@@ -15,7 +15,7 @@ public enum ErrorCode {
     FAB_EDGE_NOT_FOUND(HttpStatus.NOT_FOUND, "FAB 엣지를 찾을 수 없습니다."),
     INVALID_TRANSFER_STATUS(HttpStatus.CONFLICT, "반송 요청 상태가 올바르지 않습니다."),
     INVALID_OHT_STATUS(HttpStatus.CONFLICT, "OHT 상태가 올바르지 않습니다."),
-    INVALID_STATE_TRANSITION(HttpStatus.CONFLICT, "허용되지 않은 상태 전이입니다."),
+    INVALID_STATE_TRANSITION(HttpStatus.CONFLICT, "허용되지 않는 상태 전이입니다."),
     AVAILABLE_OHT_NOT_FOUND(HttpStatus.CONFLICT, "배정 가능한 OHT가 없습니다."),
     OHT_ALREADY_ASSIGNED(HttpStatus.CONFLICT, "OHT가 이미 다른 요청에 배정되어 있습니다."),
     ROUTE_NOT_FOUND(HttpStatus.CONFLICT, "이동 가능한 경로를 찾을 수 없습니다."),
