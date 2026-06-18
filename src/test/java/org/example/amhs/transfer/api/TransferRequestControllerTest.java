@@ -113,6 +113,7 @@ class TransferRequestControllerTest {
 
         ApiResponse<CancelTransferRequestResponse> canceled = controller.cancel(
                 created.data().requestId(),
+                "operator02",
                 new CancelTransferRequestRequest("운영자 취소")
         );
 

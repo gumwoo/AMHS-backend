@@ -32,12 +32,14 @@ class OperationActionLogServiceTest {
                 OperationActionType.TRANSFER_CANCELED,
                 OperationTargetType.TRANSFER,
                 "1001",
+                "operator02",
                 "운영자 취소"
         );
         operationActionLogService.record(
                 OperationActionType.OHT_MARKED_ERROR,
                 OperationTargetType.OHT,
                 "OHT-01",
+                null,
                 "오류 처리"
         );
 
@@ -46,6 +48,7 @@ class OperationActionLogServiceTest {
         assertThat(logs).hasSize(2);
         assertThat(logs.get(0).actionType()).isEqualTo(OperationActionType.OHT_MARKED_ERROR);
         assertThat(logs.get(0).operatorId()).isEqualTo("operator01");
+        assertThat(logs.get(1).operatorId()).isEqualTo("operator02");
         assertThat(logs.get(1).targetId()).isEqualTo("1001");
     }
 }

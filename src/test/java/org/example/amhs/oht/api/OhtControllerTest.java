@@ -66,7 +66,7 @@ class OhtControllerTest {
 
     @Test
     void OHT_오류_처리한다() {
-        ApiResponse<OhtResponse> response = ohtController.markError("OHT-01");
+        ApiResponse<OhtResponse> response = ohtController.markError("OHT-01", "operator02");
 
         assertThat(response.success()).isTrue();
         assertThat(response.data().status()).isEqualTo(OhtStatus.ERROR);
@@ -77,7 +77,7 @@ class OhtControllerTest {
 
     @Test
     void OHT_복구_처리한다() {
-        ApiResponse<OhtResponse> response = ohtController.recover("OHT-02");
+        ApiResponse<OhtResponse> response = ohtController.recover("OHT-02", null);
 
         assertThat(response.success()).isTrue();
         assertThat(response.data().status()).isEqualTo(OhtStatus.IDLE);

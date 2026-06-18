@@ -12,6 +12,7 @@ import org.example.amhs.oht.dto.OhtResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -43,24 +44,32 @@ public class OhtController {
     }
 
     @PostMapping("/api/ohts/{ohtId}/error")
-    ApiResponse<OhtResponse> markError(@PathVariable String ohtId) {
+    ApiResponse<OhtResponse> markError(
+            @PathVariable String ohtId,
+            @RequestHeader(value = "X-Operator-Id", required = false) String operatorId
+    ) {
         OhtResponse response = ohtService.markError(ohtId);
         operationActionLogService.record(
                 OperationActionType.OHT_MARKED_ERROR,
                 OperationTargetType.OHT,
                 ohtId,
+                operatorId,
                 "운영자 오류 처리"
         );
         return ApiResponse.ok(response);
     }
 
     @PostMapping("/api/ohts/{ohtId}/recover")
-    ApiResponse<OhtResponse> recover(@PathVariable String ohtId) {
+    ApiResponse<OhtResponse> recover(
+            @PathVariable String ohtId,
+            @RequestHeader(value = "X-Operator-Id", required = false) String operatorId
+    ) {
         OhtResponse response = ohtService.recover(ohtId);
         operationActionLogService.record(
                 OperationActionType.OHT_RECOVERED,
                 OperationTargetType.OHT,
                 ohtId,
+                operatorId,
                 "운영자 복구 처리"
         );
         return ApiResponse.ok(response);

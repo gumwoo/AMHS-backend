@@ -52,14 +52,14 @@ class FabMapControllerTest {
     @Test
     void edge를_차단하고_해제한다() {
         ApiResponse<FabEdgeStatusResponse> blockResponse =
-                fabMapController.blockEdge("EDGE-001", new BlockFabEdgeRequest("테스트 차단"));
+                fabMapController.blockEdge("EDGE-001", "operator02", new BlockFabEdgeRequest("테스트 차단"));
 
         assertThat(blockResponse.success()).isTrue();
         assertThat(blockResponse.data().edgeId()).isEqualTo("EDGE-001");
         assertThat(blockResponse.data().blocked()).isTrue();
         assertThat(blockResponse.data().reason()).isEqualTo("테스트 차단");
 
-        ApiResponse<FabEdgeStatusResponse> unblockResponse = fabMapController.unblockEdge("EDGE-001");
+        ApiResponse<FabEdgeStatusResponse> unblockResponse = fabMapController.unblockEdge("EDGE-001", null);
         assertThat(unblockResponse.success()).isTrue();
         assertThat(unblockResponse.data().edgeId()).isEqualTo("EDGE-001");
         assertThat(unblockResponse.data().blocked()).isFalse();

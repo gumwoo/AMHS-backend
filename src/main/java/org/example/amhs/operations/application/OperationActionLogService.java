@@ -31,17 +31,22 @@ public class OperationActionLogService {
             OperationActionType actionType,
             OperationTargetType targetType,
             String targetId,
+            String operatorId,
             String reason
     ) {
         OperationActionLog log = operationActionLogRepository.save(new OperationActionLog(
                 actionType,
                 targetType,
                 targetId,
-                DEFAULT_OPERATOR_ID,
+                normalizeOperatorId(operatorId),
                 reason == null || reason.isBlank() ? "-" : reason,
                 timeProvider.now()
         ));
         return OperationActionLogResponse.from(log);
+    }
+
+    private String normalizeOperatorId(String operatorId) {
+        return operatorId == null || operatorId.isBlank() ? DEFAULT_OPERATOR_ID : operatorId.trim();
     }
 
     @Transactional(readOnly = true)

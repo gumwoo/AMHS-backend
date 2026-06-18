@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -95,6 +96,7 @@ public class TransferRequestController {
     @PostMapping("/api/transfer-requests/{requestId}/cancel")
     ApiResponse<CancelTransferRequestResponse> cancel(
             @PathVariable Long requestId,
+            @RequestHeader(value = "X-Operator-Id", required = false) String operatorId,
             @RequestBody(required = false) CancelTransferRequestRequest request
     ) {
         CancelTransferRequestResponse response = transferRequestService.cancel(requestId, request);
@@ -103,6 +105,7 @@ public class TransferRequestController {
                 OperationActionType.TRANSFER_CANCELED,
                 OperationTargetType.TRANSFER,
                 String.valueOf(requestId),
+                operatorId,
                 reason
         );
         return ApiResponse.ok(response);
