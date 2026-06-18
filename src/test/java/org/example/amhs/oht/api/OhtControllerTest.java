@@ -63,4 +63,26 @@ class OhtControllerTest {
         assertThat(response.data().ohtId()).isEqualTo("OHT-01");
         assertThat(response.data().recentMoveEvents()).isEmpty();
     }
+
+    @Test
+    void OHT_오류_처리한다() {
+        ApiResponse<OhtResponse> response = ohtController.markError("OHT-01");
+
+        assertThat(response.success()).isTrue();
+        assertThat(response.data().status()).isEqualTo(OhtStatus.ERROR);
+        assertThat(ohtRepository.findById("OHT-01")).hasValueSatisfying(oht ->
+                assertThat(oht.getStatus()).isEqualTo(OhtStatus.ERROR)
+        );
+    }
+
+    @Test
+    void OHT_복구_처리한다() {
+        ApiResponse<OhtResponse> response = ohtController.recover("OHT-02");
+
+        assertThat(response.success()).isTrue();
+        assertThat(response.data().status()).isEqualTo(OhtStatus.IDLE);
+        assertThat(ohtRepository.findById("OHT-02")).hasValueSatisfying(oht ->
+                assertThat(oht.getStatus()).isEqualTo(OhtStatus.IDLE)
+        );
+    }
 }

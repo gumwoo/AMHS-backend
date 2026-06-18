@@ -8,6 +8,7 @@ import org.example.amhs.oht.dto.OhtDetailResponse;
 import org.example.amhs.oht.dto.OhtResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -31,5 +32,15 @@ public class OhtController {
     @GetMapping("/api/ohts/{ohtId}")
     ApiResponse<OhtDetailResponse> getOht(@PathVariable String ohtId) {
         return ApiResponse.ok(ohtService.getOht(ohtId));
+    }
+
+    @PostMapping("/api/ohts/{ohtId}/error")
+    ApiResponse<OhtResponse> markError(@PathVariable String ohtId) {
+        return ApiResponse.ok(ohtService.markError(ohtId));
+    }
+
+    @PostMapping("/api/ohts/{ohtId}/recover")
+    ApiResponse<OhtResponse> recover(@PathVariable String ohtId) {
+        return ApiResponse.ok(ohtService.recover(ohtId));
     }
 }
