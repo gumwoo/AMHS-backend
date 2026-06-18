@@ -55,4 +55,24 @@ public class TransferHistory {
     public Long getHistoryId() {
         return historyId;
     }
+
+    public Long getRequestId() {
+        return requestId;
+    }
+
+    public TransferRequestStatus getPreviousStatus() {
+        return previousStatus;
+    }
+
+    public TransferRequestStatus getNextStatus() {
+        return nextStatus;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public OffsetDateTime getOccurredAt() {
+        return occurredAt;
+    }
 }
