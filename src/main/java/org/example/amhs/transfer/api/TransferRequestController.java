@@ -4,6 +4,9 @@ import jakarta.validation.Valid;
 import java.time.OffsetDateTime;
 import org.example.amhs.common.response.ApiResponse;
 import org.example.amhs.common.response.PageResponse;
+import org.example.amhs.operations.application.OperationActionLogService;
+import org.example.amhs.operations.domain.OperationActionType;
+import org.example.amhs.operations.domain.OperationTargetType;
 import org.example.amhs.transfer.application.TransferRequestService;
 import org.example.amhs.transfer.domain.TransferPriority;
 import org.example.amhs.transfer.domain.TransferRequestStatus;
@@ -30,9 +33,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class TransferRequestController {
 
     private final TransferRequestService transferRequestService;
+    private final OperationActionLogService operationActionLogService;
 
-    public TransferRequestController(TransferRequestService transferRequestService) {
+    public TransferRequestController(
+            TransferRequestService transferRequestService,
+            OperationActionLogService operationActionLogService
+    ) {
         this.transferRequestService = transferRequestService;
+        this.operationActionLogService = operationActionLogService;
     }
 
     @ResponseStatus(HttpStatus.CREATED)
@@ -89,6 +97,14 @@ public class TransferRequestController {
             @PathVariable Long requestId,
             @RequestBody(required = false) CancelTransferRequestRequest request
     ) {
-        return ApiResponse.ok(transferRequestService.cancel(requestId, request));
+        CancelTransferRequestResponse response = transferRequestService.cancel(requestId, request);
+        String reason = request == null ? "운영자 취소" : request.reason();
+        operationActionLogService.record(
+                OperationActionType.TRANSFER_CANCELED,
+                OperationTargetType.TRANSFER,
+                String.valueOf(requestId),
+                reason
+        );
+        return ApiResponse.ok(response);
     }
 }
