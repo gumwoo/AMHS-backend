@@ -51,4 +51,32 @@ public class OhtMoveEvent {
         this.occurredAt = occurredAt;
         this.travelSeconds = travelSeconds;
     }
+
+    public String getEventId() {
+        return eventId;
+    }
+
+    public String getOhtId() {
+        return ohtId;
+    }
+
+    public Long getRequestId() {
+        return requestId;
+    }
+
+    public String getFromNodeId() {
+        return fromNodeId;
+    }
+
+    public String getToNodeId() {
+        return toNodeId;
+    }
+
+    public OffsetDateTime getOccurredAt() {
+        return occurredAt;
+    }
+
+    public long getTravelSeconds() {
+        return travelSeconds;
+    }
 }

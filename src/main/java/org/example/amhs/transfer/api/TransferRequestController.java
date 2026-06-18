@@ -11,6 +11,7 @@ import org.example.amhs.transfer.dto.AssignTransferRequestResponse;
 import org.example.amhs.transfer.dto.CancelTransferRequestRequest;
 import org.example.amhs.transfer.dto.CancelTransferRequestResponse;
 import org.example.amhs.transfer.dto.CreateTransferRequestRequest;
+import org.example.amhs.transfer.dto.StartTransferRequestResponse;
 import org.example.amhs.transfer.dto.TransferRequestDetailResponse;
 import org.example.amhs.transfer.dto.TransferRequestResponse;
 import org.springframework.data.domain.PageRequest;
@@ -75,6 +76,11 @@ public class TransferRequestController {
             @RequestBody(required = false) AssignTransferRequestRequest request
     ) {
         return ApiResponse.ok(transferRequestService.assign(requestId, request));
+    }
+
+    @PostMapping("/api/transfer-requests/{requestId}/start")
+    ApiResponse<StartTransferRequestResponse> start(@PathVariable Long requestId) {
+        return ApiResponse.ok(transferRequestService.start(requestId));
     }
 
     @PostMapping("/api/transfer-requests/{requestId}/cancel")

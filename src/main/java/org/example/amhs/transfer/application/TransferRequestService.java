@@ -25,6 +25,7 @@ import org.example.amhs.transfer.dto.AssignTransferRequestResponse;
 import org.example.amhs.transfer.dto.CancelTransferRequestRequest;
 import org.example.amhs.transfer.dto.CancelTransferRequestResponse;
 import org.example.amhs.transfer.dto.CreateTransferRequestRequest;
+import org.example.amhs.transfer.dto.StartTransferRequestResponse;
 import org.example.amhs.transfer.dto.TransferHistoryResponse;
 import org.example.amhs.transfer.dto.TransferRequestDetailResponse;
 import org.example.amhs.transfer.dto.TransferRequestResponse;
@@ -173,6 +174,48 @@ public class TransferRequestService {
                 transferRequest.getRequestId(),
                 transferRequest.getStatus(),
                 reason
+        );
+    }
+
+    @Transactional
+    public StartTransferRequestResponse start(Long requestId) {
+        TransferRequest transferRequest = getRequest(requestId);
+        if (transferRequest.getStatus() != TransferRequestStatus.ASSIGNED) {
+            throw new BusinessException(ErrorCode.INVALID_TRANSFER_STATUS, Map.of(
+                    "requestId", requestId,
+                    "status", transferRequest.getStatus().name()
+            ));
+        }
+        if (transferRequest.getAssignedOhtId() == null) {
+            throw new BusinessException(ErrorCode.INVALID_TRANSFER_STATUS, Map.of("requestId", requestId));
+        }
+
+        Oht oht = getOht(transferRequest.getAssignedOhtId());
+        RouteResult route = routingService.findShortestPath(
+                transferRequest.getSourceNodeId(),
+                transferRequest.getDestinationNodeId()
+        );
+        if (route.pathNodeIds().isEmpty()) {
+            throw new BusinessException(ErrorCode.ROUTE_NOT_FOUND, Map.of("requestId", requestId));
+        }
+
+        OffsetDateTime now = timeProvider.now();
+        TransferRequestStatus previousStatus = transferRequest.getStatus();
+        transferRequest.startMoving(now);
+        oht.startMoving(now);
+        transferHistoryRepository.save(new TransferHistory(
+                requestId,
+                previousStatus,
+                transferRequest.getStatus(),
+                "반송 시작",
+                now
+        ));
+
+        return new StartTransferRequestResponse(
+                transferRequest.getRequestId(),
+                transferRequest.getStatus(),
+                transferRequest.getAssignedOhtId(),
+                transferRequest.getStartedAt()
         );
     }
 

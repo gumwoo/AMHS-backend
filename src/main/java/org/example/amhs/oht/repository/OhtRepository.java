@@ -12,6 +12,8 @@ public interface OhtRepository extends JpaRepository<Oht, String> {
 
     List<Oht> findByStatusAndCurrentRequestIdIsNull(OhtStatus status);
 
+    long countByStatus(OhtStatus status);
+
     @Modifying
     @Query("""
             update Oht o
