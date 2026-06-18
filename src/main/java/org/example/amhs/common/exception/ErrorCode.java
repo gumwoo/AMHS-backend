@@ -3,26 +3,26 @@ package org.example.amhs.common.exception;
 import org.springframework.http.HttpStatus;
 
 public enum ErrorCode {
-    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "Request format is invalid."),
-    VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "Request validation failed."),
-    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "Authentication is required."),
-    FORBIDDEN(HttpStatus.FORBIDDEN, "Access is forbidden."),
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error."),
+    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "요청 형식이 올바르지 않습니다."),
+    VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "요청 값 검증에 실패했습니다."),
+    UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
+    FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다."),
 
-    TRANSFER_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "Transfer request was not found."),
-    OHT_NOT_FOUND(HttpStatus.NOT_FOUND, "OHT was not found."),
-    FAB_NODE_NOT_FOUND(HttpStatus.NOT_FOUND, "FAB node was not found."),
-    FAB_EDGE_NOT_FOUND(HttpStatus.NOT_FOUND, "FAB edge was not found."),
-    INVALID_TRANSFER_STATUS(HttpStatus.CONFLICT, "Transfer request status is invalid."),
-    INVALID_OHT_STATUS(HttpStatus.CONFLICT, "OHT status is invalid."),
-    INVALID_STATE_TRANSITION(HttpStatus.CONFLICT, "State transition is not allowed."),
-    AVAILABLE_OHT_NOT_FOUND(HttpStatus.CONFLICT, "Available OHT was not found."),
-    OHT_ALREADY_ASSIGNED(HttpStatus.CONFLICT, "OHT is already assigned."),
-    ROUTE_NOT_FOUND(HttpStatus.CONFLICT, "Route was not found."),
-    EDGE_ALREADY_BLOCKED(HttpStatus.CONFLICT, "Edge is already blocked."),
-    EDGE_ALREADY_UNBLOCKED(HttpStatus.CONFLICT, "Edge is already unblocked."),
-    SIMULATION_ALREADY_RUNNING(HttpStatus.CONFLICT, "Simulation is already running."),
-    SIMULATION_NOT_RUNNING(HttpStatus.CONFLICT, "Simulation is not running.");
+    TRANSFER_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "반송 요청을 찾을 수 없습니다."),
+    OHT_NOT_FOUND(HttpStatus.NOT_FOUND, "OHT를 찾을 수 없습니다."),
+    FAB_NODE_NOT_FOUND(HttpStatus.NOT_FOUND, "FAB 노드를 찾을 수 없습니다."),
+    FAB_EDGE_NOT_FOUND(HttpStatus.NOT_FOUND, "FAB 엣지를 찾을 수 없습니다."),
+    INVALID_TRANSFER_STATUS(HttpStatus.CONFLICT, "반송 요청 상태가 올바르지 않습니다."),
+    INVALID_OHT_STATUS(HttpStatus.CONFLICT, "OHT 상태가 올바르지 않습니다."),
+    INVALID_STATE_TRANSITION(HttpStatus.CONFLICT, "허용되지 않은 상태 전이입니다."),
+    AVAILABLE_OHT_NOT_FOUND(HttpStatus.CONFLICT, "배정 가능한 OHT가 없습니다."),
+    OHT_ALREADY_ASSIGNED(HttpStatus.CONFLICT, "OHT가 이미 다른 요청에 배정되어 있습니다."),
+    ROUTE_NOT_FOUND(HttpStatus.CONFLICT, "이동 가능한 경로를 찾을 수 없습니다."),
+    EDGE_ALREADY_BLOCKED(HttpStatus.CONFLICT, "이미 차단된 엣지입니다."),
+    EDGE_ALREADY_UNBLOCKED(HttpStatus.CONFLICT, "이미 차단 해제된 엣지입니다."),
+    SIMULATION_ALREADY_RUNNING(HttpStatus.CONFLICT, "시뮬레이션이 이미 실행 중입니다."),
+    SIMULATION_NOT_RUNNING(HttpStatus.CONFLICT, "시뮬레이션이 실행 중이 아닙니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

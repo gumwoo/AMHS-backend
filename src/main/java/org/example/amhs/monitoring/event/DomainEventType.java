@@ -1,0 +1,16 @@
+package org.example.amhs.monitoring.event;
+
+public enum DomainEventType {
+    TRANSFER_CREATED,
+    OHT_ASSIGNED,
+    TRANSFER_STARTED,
+    OHT_MOVED,
+    TRANSFER_COMPLETED,
+    TRANSFER_FAILED,
+    TRANSFER_CANCELED,
+    OHT_ERROR_OCCURRED,
+    OHT_RECOVERED,
+    EDGE_BLOCKED,
+    EDGE_UNBLOCKED,
+    ROUTE_NOT_FOUND
+}
