@@ -48,4 +48,28 @@ public class FabNode {
         this.positionY = positionY;
         this.active = active;
     }
+
+    public String getNodeId() {
+        return nodeId;
+    }
+
+    public NodeType getNodeType() {
+        return nodeType;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public double getPositionX() {
+        return positionX;
+    }
+
+    public double getPositionY() {
+        return positionY;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
 }

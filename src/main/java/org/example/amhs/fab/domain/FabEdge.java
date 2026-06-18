@@ -65,4 +65,28 @@ public class FabEdge {
         }
         this.blocked = false;
     }
+
+    public String getEdgeId() {
+        return edgeId;
+    }
+
+    public String getFromNodeId() {
+        return fromNodeId;
+    }
+
+    public String getToNodeId() {
+        return toNodeId;
+    }
+
+    public double getDistanceMeters() {
+        return distanceMeters;
+    }
+
+    public long getEstimatedTravelSeconds() {
+        return estimatedTravelSeconds;
+    }
+
+    public boolean isBlocked() {
+        return blocked;
+    }
 }
