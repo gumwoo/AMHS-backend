@@ -23,9 +23,16 @@ public class DemoMonitoringService {
     private static final Logger log = LoggerFactory.getLogger(DemoMonitoringService.class);
     private static final List<String> OHT_IDS = List.of("OHT-01", "OHT-02", "OHT-03", "OHT-04");
     private static final List<String> NODE_IDS = List.of(
-            "STOCKER-A", "STOCKER-B", "STOCKER-C", "EQP-01", "EQP-02", "EQP-03", "J-01", "J-02", "J-03", "J-04", "CHARGER"
+            "STOCKER-A", "STOCKER-B", "EQP-01", "EQP-02", "JUNCTION-01", "JUNCTION-02", "CHARGER-01"
     );
-    private static final List<String> EDGE_IDS = List.of("EDGE-001", "EDGE-002", "EDGE-003", "EDGE-004", "EDGE-007", "EDGE-012");
+    private static final List<DemoEdge> EDGES = List.of(
+            new DemoEdge("EDGE-001", "STOCKER-A", "JUNCTION-01"),
+            new DemoEdge("EDGE-002", "STOCKER-B", "JUNCTION-01"),
+            new DemoEdge("EDGE-003", "JUNCTION-01", "JUNCTION-02"),
+            new DemoEdge("EDGE-004", "JUNCTION-02", "EQP-01"),
+            new DemoEdge("EDGE-005", "JUNCTION-02", "EQP-02"),
+            new DemoEdge("EDGE-006", "CHARGER-01", "JUNCTION-01")
+    );
 
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicLong emittedEvents = new AtomicLong(0);
@@ -128,14 +135,16 @@ public class DemoMonitoringService {
         String ohtId = pick(OHT_IDS);
         String fromNodeId = pick(NODE_IDS);
         String toNodeId = pickDifferent(NODE_IDS, fromNodeId);
+        DemoEdge edge = pick(EDGES);
 
         switch (eventType) {
             case OHT_MOVED -> {
                 data.put("requestId", requestId);
                 data.put("ohtId", ohtId);
-                data.put("fromNodeId", fromNodeId);
-                data.put("toNodeId", toNodeId);
-                data.put("currentNodeId", toNodeId);
+                data.put("edgeId", edge.edgeId());
+                data.put("fromNodeId", edge.fromNodeId());
+                data.put("toNodeId", edge.toNodeId());
+                data.put("currentNodeId", edge.toNodeId());
                 data.put("progressRate", ThreadLocalRandom.current().nextInt(12, 96));
             }
             case OHT_ASSIGNED -> {
@@ -163,9 +172,9 @@ public class DemoMonitoringService {
                 }
             }
             case EDGE_BLOCKED, EDGE_UNBLOCKED -> {
-                data.put("edgeId", pick(EDGE_IDS));
-                data.put("fromNodeId", fromNodeId);
-                data.put("toNodeId", toNodeId);
+                data.put("edgeId", edge.edgeId());
+                data.put("fromNodeId", edge.fromNodeId());
+                data.put("toNodeId", edge.toNodeId());
                 data.put("reason", eventType == DomainEventType.EDGE_BLOCKED ? "데모 병목 감지" : "데모 차단 해제");
             }
             case ROUTE_NOT_FOUND -> {
@@ -178,7 +187,7 @@ public class DemoMonitoringService {
         return data;
     }
 
-    private String pick(List<String> values) {
+    private <T> T pick(List<T> values) {
         return values.get(ThreadLocalRandom.current().nextInt(values.size()));
     }
 
@@ -188,5 +197,12 @@ public class DemoMonitoringService {
             value = pick(values);
         }
         return value;
+    }
+
+    private record DemoEdge(
+            String edgeId,
+            String fromNodeId,
+            String toNodeId
+    ) {
     }
 }
