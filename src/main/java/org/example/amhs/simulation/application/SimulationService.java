@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.example.amhs.common.config.AmhsProperties;
 import org.example.amhs.common.exception.BusinessException;
 import org.example.amhs.common.exception.ErrorCode;
 import org.example.amhs.common.time.TimeProvider;
@@ -44,6 +45,7 @@ public class SimulationService {
     private final RoutingService routingService;
     private final TimeProvider timeProvider;
     private final MonitoringEventService monitoringEventService;
+    private final AmhsProperties amhsProperties;
 
     public SimulationService(
             TransferRequestRepository transferRequestRepository,
@@ -52,7 +54,8 @@ public class SimulationService {
             OhtMoveEventRepository ohtMoveEventRepository,
             RoutingService routingService,
             TimeProvider timeProvider,
-            MonitoringEventService monitoringEventService
+            MonitoringEventService monitoringEventService,
+            AmhsProperties amhsProperties
     ) {
         this.transferRequestRepository = transferRequestRepository;
         this.transferHistoryRepository = transferHistoryRepository;
@@ -61,6 +64,7 @@ public class SimulationService {
         this.routingService = routingService;
         this.timeProvider = timeProvider;
         this.monitoringEventService = monitoringEventService;
+        this.amhsProperties = amhsProperties;
     }
 
     public SimulationStartResponse start() {
@@ -202,6 +206,18 @@ public class SimulationService {
                         "elapsedSeconds", elapsedSeconds
                 )
         );
+        if (elapsedSeconds > amhsProperties.analytics().delayThresholdSeconds()) {
+            monitoringEventService.publishAfterCommit(
+                    DomainEventType.TRANSFER_DELAYED,
+                    now,
+                    Map.of(
+                            "requestId", request.getRequestId(),
+                            "ohtId", oht.getOhtId(),
+                            "elapsedSeconds", elapsedSeconds,
+                            "delayThresholdSeconds", amhsProperties.analytics().delayThresholdSeconds()
+                    )
+            );
+        }
     }
 
     private void failRequest(TransferRequest request, String reason, OffsetDateTime now) {
@@ -228,5 +244,11 @@ public class SimulationService {
         }
         eventData.put("failedReason", reason);
         monitoringEventService.publishAfterCommit(DomainEventType.TRANSFER_FAILED, now, eventData);
+        if ("OHT_ERROR_OCCURRED".equals(reason)) {
+            monitoringEventService.publishAfterCommit(DomainEventType.OHT_ERROR_OCCURRED, now, eventData);
+        }
+        if ("ROUTE_NOT_FOUND".equals(reason)) {
+            monitoringEventService.publishAfterCommit(DomainEventType.ROUTE_NOT_FOUND, now, eventData);
+        }
     }
 }
