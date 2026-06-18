@@ -1,12 +1,16 @@
 package org.example.amhs.simulation.application;
 
 import java.time.OffsetDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.example.amhs.common.exception.BusinessException;
 import org.example.amhs.common.exception.ErrorCode;
 import org.example.amhs.common.time.TimeProvider;
+import org.example.amhs.monitoring.application.MonitoringEventService;
+import org.example.amhs.monitoring.event.DomainEventType;
 import org.example.amhs.oht.domain.Oht;
 import org.example.amhs.oht.domain.OhtMoveEvent;
 import org.example.amhs.oht.domain.OhtStatus;
@@ -39,6 +43,7 @@ public class SimulationService {
     private final OhtMoveEventRepository ohtMoveEventRepository;
     private final RoutingService routingService;
     private final TimeProvider timeProvider;
+    private final MonitoringEventService monitoringEventService;
 
     public SimulationService(
             TransferRequestRepository transferRequestRepository,
@@ -46,7 +51,8 @@ public class SimulationService {
             OhtRepository ohtRepository,
             OhtMoveEventRepository ohtMoveEventRepository,
             RoutingService routingService,
-            TimeProvider timeProvider
+            TimeProvider timeProvider,
+            MonitoringEventService monitoringEventService
     ) {
         this.transferRequestRepository = transferRequestRepository;
         this.transferHistoryRepository = transferHistoryRepository;
@@ -54,6 +60,7 @@ public class SimulationService {
         this.ohtMoveEventRepository = ohtMoveEventRepository;
         this.routingService = routingService;
         this.timeProvider = timeProvider;
+        this.monitoringEventService = monitoringEventService;
     }
 
     public SimulationStartResponse start() {
@@ -146,6 +153,18 @@ public class SimulationService {
                 now,
                 estimateTravelSeconds(route, edgeId)
         ));
+        monitoringEventService.publishAfterCommit(
+                DomainEventType.OHT_MOVED,
+                now,
+                Map.of(
+                        "requestId", request.getRequestId(),
+                        "ohtId", oht.getOhtId(),
+                        "fromNodeId", fromNodeId,
+                        "toNodeId", toNodeId,
+                        "currentNodeId", toNodeId,
+                        "progressRate", toNodeId.equals(request.getDestinationNodeId()) ? 100 : 50
+                )
+        );
 
         if (toNodeId.equals(request.getDestinationNodeId())) {
             completeRequest(request, oht, now);
@@ -170,6 +189,18 @@ public class SimulationService {
                 "반송 완료",
                 now
         ));
+        long elapsedSeconds = request.getRequestedAt() == null
+                ? 0
+                : java.time.Duration.between(request.getRequestedAt(), now).toSeconds();
+        monitoringEventService.publishAfterCommit(
+                DomainEventType.TRANSFER_COMPLETED,
+                now,
+                Map.of(
+                        "requestId", request.getRequestId(),
+                        "ohtId", oht.getOhtId(),
+                        "elapsedSeconds", elapsedSeconds
+                )
+        );
     }
 
     private void failRequest(TransferRequest request, String reason, OffsetDateTime now) {
@@ -189,5 +220,12 @@ public class SimulationService {
                 reason,
                 now
         ));
+        Map<String, Object> eventData = new LinkedHashMap<>();
+        eventData.put("requestId", request.getRequestId());
+        if (request.getAssignedOhtId() != null) {
+            eventData.put("ohtId", request.getAssignedOhtId());
+        }
+        eventData.put("failedReason", reason);
+        monitoringEventService.publishAfterCommit(DomainEventType.TRANSFER_FAILED, now, eventData);
     }
 }

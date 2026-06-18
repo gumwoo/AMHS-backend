@@ -1,6 +1,7 @@
 package org.example.amhs.fab.application;
 
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.example.amhs.common.exception.ErrorCode;
 import org.example.amhs.common.exception.ResourceNotFoundException;
@@ -11,21 +12,28 @@ import org.example.amhs.fab.dto.FabMapResponse;
 import org.example.amhs.fab.dto.FabNodeResponse;
 import org.example.amhs.fab.repository.FabEdgeRepository;
 import org.example.amhs.fab.repository.FabNodeRepository;
+import org.example.amhs.monitoring.application.MonitoringEventService;
+import org.example.amhs.monitoring.event.DomainEventType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.OffsetDateTime;
 
 @Service
 public class FabMapService {
 
     private final FabNodeRepository fabNodeRepository;
     private final FabEdgeRepository fabEdgeRepository;
+    private final MonitoringEventService monitoringEventService;
 
     public FabMapService(
             FabNodeRepository fabNodeRepository,
-            FabEdgeRepository fabEdgeRepository
+            FabEdgeRepository fabEdgeRepository,
+            MonitoringEventService monitoringEventService
     ) {
         this.fabNodeRepository = fabNodeRepository;
         this.fabEdgeRepository = fabEdgeRepository;
+        this.monitoringEventService = monitoringEventService;
     }
 
     @Transactional(readOnly = true)
@@ -45,6 +53,18 @@ public class FabMapService {
     public FabEdgeStatusResponse blockEdge(String edgeId, String reason) {
         FabEdge edge = getEdge(edgeId);
         edge.block();
+        Map<String, Object> eventData = new LinkedHashMap<>();
+        eventData.put("edgeId", edge.getEdgeId());
+        eventData.put("fromNodeId", edge.getFromNodeId());
+        eventData.put("toNodeId", edge.getToNodeId());
+        if (reason != null) {
+            eventData.put("reason", reason);
+        }
+        monitoringEventService.publishAfterCommit(
+                DomainEventType.EDGE_BLOCKED,
+                OffsetDateTime.now(),
+                eventData
+        );
         return new FabEdgeStatusResponse(edge.getEdgeId(), edge.isBlocked(), reason);
     }
 
@@ -52,6 +72,15 @@ public class FabMapService {
     public FabEdgeStatusResponse unblockEdge(String edgeId) {
         FabEdge edge = getEdge(edgeId);
         edge.unblock();
+        monitoringEventService.publishAfterCommit(
+                DomainEventType.EDGE_UNBLOCKED,
+                OffsetDateTime.now(),
+                Map.of(
+                        "edgeId", edge.getEdgeId(),
+                        "fromNodeId", edge.getFromNodeId(),
+                        "toNodeId", edge.getToNodeId()
+                )
+        );
         return new FabEdgeStatusResponse(edge.getEdgeId(), edge.isBlocked(), null);
     }
 

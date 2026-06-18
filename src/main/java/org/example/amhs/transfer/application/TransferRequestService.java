@@ -3,6 +3,7 @@ package org.example.amhs.transfer.application;
 import jakarta.persistence.criteria.Predicate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.example.amhs.common.exception.BusinessException;
@@ -11,6 +12,8 @@ import org.example.amhs.common.exception.ResourceNotFoundException;
 import org.example.amhs.common.time.TimeProvider;
 import org.example.amhs.dispatch.application.DispatchService;
 import org.example.amhs.fab.repository.FabNodeRepository;
+import org.example.amhs.monitoring.application.MonitoringEventService;
+import org.example.amhs.monitoring.event.DomainEventType;
 import org.example.amhs.oht.domain.Oht;
 import org.example.amhs.oht.domain.OhtStatus;
 import org.example.amhs.oht.repository.OhtRepository;
@@ -47,6 +50,7 @@ public class TransferRequestService {
     private final DispatchService dispatchService;
     private final RoutingService routingService;
     private final TimeProvider timeProvider;
+    private final MonitoringEventService monitoringEventService;
 
     public TransferRequestService(
             TransferRequestRepository transferRequestRepository,
@@ -55,7 +59,8 @@ public class TransferRequestService {
             OhtRepository ohtRepository,
             DispatchService dispatchService,
             RoutingService routingService,
-            TimeProvider timeProvider
+            TimeProvider timeProvider,
+            MonitoringEventService monitoringEventService
     ) {
         this.transferRequestRepository = transferRequestRepository;
         this.transferHistoryRepository = transferHistoryRepository;
@@ -64,6 +69,7 @@ public class TransferRequestService {
         this.dispatchService = dispatchService;
         this.routingService = routingService;
         this.timeProvider = timeProvider;
+        this.monitoringEventService = monitoringEventService;
     }
 
     @Transactional
@@ -77,7 +83,19 @@ public class TransferRequestService {
                 request.priority(),
                 timeProvider.now()
         );
-        return TransferRequestResponse.from(transferRequestRepository.save(transferRequest));
+        TransferRequest saved = transferRequestRepository.save(transferRequest);
+        monitoringEventService.publishAfterCommit(
+                DomainEventType.TRANSFER_CREATED,
+                saved.getRequestedAt(),
+                Map.of(
+                        "requestId", saved.getRequestId(),
+                        "sourceNodeId", saved.getSourceNodeId(),
+                        "destinationNodeId", saved.getDestinationNodeId(),
+                        "priority", saved.getPriority().name(),
+                        "status", saved.getStatus().name()
+                )
+        );
+        return TransferRequestResponse.from(saved);
     }
 
     @Transactional(readOnly = true)
@@ -138,6 +156,15 @@ public class TransferRequestService {
                 "OHT 배정",
                 now
         ));
+        monitoringEventService.publishAfterCommit(
+                DomainEventType.OHT_ASSIGNED,
+                now,
+                Map.of(
+                        "requestId", requestId,
+                        "ohtId", ohtId,
+                        "status", transferRequest.getStatus().name()
+                )
+        );
 
         return new AssignTransferRequestResponse(
                 transferRequest.getRequestId(),
@@ -169,6 +196,14 @@ public class TransferRequestService {
                 reason,
                 now
         ));
+        Map<String, Object> eventData = new LinkedHashMap<>();
+        eventData.put("requestId", requestId);
+        if (transferRequest.getAssignedOhtId() != null) {
+            eventData.put("ohtId", transferRequest.getAssignedOhtId());
+        }
+        eventData.put("status", transferRequest.getStatus().name());
+        eventData.put("reason", reason);
+        monitoringEventService.publishAfterCommit(DomainEventType.TRANSFER_CANCELED, now, eventData);
 
         return new CancelTransferRequestResponse(
                 transferRequest.getRequestId(),
@@ -210,6 +245,15 @@ public class TransferRequestService {
                 "반송 시작",
                 now
         ));
+        monitoringEventService.publishAfterCommit(
+                DomainEventType.TRANSFER_STARTED,
+                now,
+                Map.of(
+                        "requestId", requestId,
+                        "ohtId", transferRequest.getAssignedOhtId(),
+                        "status", transferRequest.getStatus().name()
+                )
+        );
 
         return new StartTransferRequestResponse(
                 transferRequest.getRequestId(),
