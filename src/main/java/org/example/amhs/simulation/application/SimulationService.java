@@ -27,6 +27,7 @@ import org.example.amhs.transfer.domain.TransferRequest;
 import org.example.amhs.transfer.domain.TransferRequestStatus;
 import org.example.amhs.transfer.repository.TransferHistoryRepository;
 import org.example.amhs.transfer.repository.TransferRequestRepository;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -98,6 +99,14 @@ public class SimulationService {
         );
     }
 
+    @Scheduled(fixedDelayString = "${amhs.simulation.tick-interval-ms:1000}")
+    @Transactional
+    public void scheduledTick() {
+        if (running.get()) {
+            tickOnce();
+        }
+    }
+
     @Transactional
     public int tickOnce() {
         lastTickAt = timeProvider.now();
@@ -126,9 +135,8 @@ public class SimulationService {
             return;
         }
 
-        String targetNodeId = oht.getCurrentNodeId().equals(request.getSourceNodeId())
-                ? request.getDestinationNodeId()
-                : request.getSourceNodeId();
+        boolean loaded = oht.getCarryingFoupId() != null;
+        String targetNodeId = loaded ? request.getDestinationNodeId() : request.getSourceNodeId();
         RouteResult route;
         try {
             route = routingService.findShortestPath(oht.getCurrentNodeId(), targetNodeId);
@@ -138,8 +146,10 @@ public class SimulationService {
         }
         List<String> path = route.pathNodeIds();
         if (path.size() <= 1) {
-            if (targetNodeId.equals(request.getDestinationNodeId())) {
+            if (loaded) {
                 completeRequest(request, oht, now);
+            } else {
+                oht.load("FOUP-" + request.getRequestId(), now);
             }
             return;
         }
@@ -148,6 +158,10 @@ public class SimulationService {
         String toNodeId = path.get(1);
         String edgeId = route.pathEdgeIds().isEmpty() ? "UNKNOWN_EDGE" : route.pathEdgeIds().get(0);
         oht.moveTo(toNodeId, now);
+        if (!loaded && toNodeId.equals(request.getSourceNodeId())) {
+            oht.load("FOUP-" + request.getRequestId(), now);
+        }
+        boolean arrivedAtDestination = loaded && toNodeId.equals(request.getDestinationNodeId());
         ohtMoveEventRepository.save(new OhtMoveEvent(
                 "evt_" + UUID.randomUUID(),
                 oht.getOhtId(),
@@ -167,11 +181,11 @@ public class SimulationService {
                         "fromNodeId", fromNodeId,
                         "toNodeId", toNodeId,
                         "currentNodeId", toNodeId,
-                        "progressRate", toNodeId.equals(request.getDestinationNodeId()) ? 100 : 50
+                        "progressRate", arrivedAtDestination ? 100 : 50
                 )
         );
 
-        if (toNodeId.equals(request.getDestinationNodeId())) {
+        if (arrivedAtDestination) {
             completeRequest(request, oht, now);
         }
     }

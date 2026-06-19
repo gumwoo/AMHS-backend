@@ -67,6 +67,14 @@ public class Oht {
         this.lastMovedAt = now;
     }
 
+    public void load(String foupId, OffsetDateTime now) {
+        if (status != OhtStatus.RESERVED && status != OhtStatus.MOVING) {
+            throw invalidTransition(OhtStatus.MOVING);
+        }
+        this.carryingFoupId = foupId;
+        this.lastMovedAt = now;
+    }
+
     public void release(OffsetDateTime now) {
         if (status != OhtStatus.RESERVED && status != OhtStatus.MOVING) {
             throw invalidTransition(OhtStatus.IDLE);
