@@ -1,5 +1,6 @@
 package org.example.amhs.fab.application;
 
+import java.time.OffsetDateTime;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -14,10 +15,11 @@ import org.example.amhs.fab.repository.FabEdgeRepository;
 import org.example.amhs.fab.repository.FabNodeRepository;
 import org.example.amhs.monitoring.application.MonitoringEventService;
 import org.example.amhs.monitoring.event.DomainEventType;
+import org.example.amhs.operations.application.OperationActionLogService;
+import org.example.amhs.operations.domain.OperationActionType;
+import org.example.amhs.operations.domain.OperationTargetType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.OffsetDateTime;
 
 @Service
 public class FabMapService {
@@ -25,15 +27,18 @@ public class FabMapService {
     private final FabNodeRepository fabNodeRepository;
     private final FabEdgeRepository fabEdgeRepository;
     private final MonitoringEventService monitoringEventService;
+    private final OperationActionLogService operationActionLogService;
 
     public FabMapService(
             FabNodeRepository fabNodeRepository,
             FabEdgeRepository fabEdgeRepository,
-            MonitoringEventService monitoringEventService
+            MonitoringEventService monitoringEventService,
+            OperationActionLogService operationActionLogService
     ) {
         this.fabNodeRepository = fabNodeRepository;
         this.fabEdgeRepository = fabEdgeRepository;
         this.monitoringEventService = monitoringEventService;
+        this.operationActionLogService = operationActionLogService;
     }
 
     @Transactional(readOnly = true)
@@ -51,8 +56,20 @@ public class FabMapService {
 
     @Transactional
     public FabEdgeStatusResponse blockEdge(String edgeId, String reason) {
+        return blockEdge(edgeId, reason, null);
+    }
+
+    @Transactional
+    public FabEdgeStatusResponse blockEdge(String edgeId, String reason, String operatorId) {
         FabEdge edge = getEdge(edgeId);
         edge.block();
+        operationActionLogService.record(
+                OperationActionType.EDGE_BLOCKED,
+                OperationTargetType.EDGE,
+                edgeId,
+                operatorId,
+                reason
+        );
         Map<String, Object> eventData = new LinkedHashMap<>();
         eventData.put("edgeId", edge.getEdgeId());
         eventData.put("fromNodeId", edge.getFromNodeId());
@@ -70,8 +87,20 @@ public class FabMapService {
 
     @Transactional
     public FabEdgeStatusResponse unblockEdge(String edgeId) {
+        return unblockEdge(edgeId, null);
+    }
+
+    @Transactional
+    public FabEdgeStatusResponse unblockEdge(String edgeId, String operatorId) {
         FabEdge edge = getEdge(edgeId);
         edge.unblock();
+        operationActionLogService.record(
+                OperationActionType.EDGE_UNBLOCKED,
+                OperationTargetType.EDGE,
+                edgeId,
+                operatorId,
+                "운영자 차단 해제"
+        );
         monitoringEventService.publishAfterCommit(
                 DomainEventType.EDGE_UNBLOCKED,
                 OffsetDateTime.now(),

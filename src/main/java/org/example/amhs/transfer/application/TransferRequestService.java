@@ -17,6 +17,9 @@ import org.example.amhs.monitoring.event.DomainEventType;
 import org.example.amhs.oht.domain.Oht;
 import org.example.amhs.oht.domain.OhtStatus;
 import org.example.amhs.oht.repository.OhtRepository;
+import org.example.amhs.operations.application.OperationActionLogService;
+import org.example.amhs.operations.domain.OperationActionType;
+import org.example.amhs.operations.domain.OperationTargetType;
 import org.example.amhs.routing.application.RoutingService;
 import org.example.amhs.routing.domain.RouteResult;
 import org.example.amhs.transfer.domain.TransferHistory;
@@ -51,6 +54,7 @@ public class TransferRequestService {
     private final RoutingService routingService;
     private final TimeProvider timeProvider;
     private final MonitoringEventService monitoringEventService;
+    private final OperationActionLogService operationActionLogService;
 
     public TransferRequestService(
             TransferRequestRepository transferRequestRepository,
@@ -60,7 +64,8 @@ public class TransferRequestService {
             DispatchService dispatchService,
             RoutingService routingService,
             TimeProvider timeProvider,
-            MonitoringEventService monitoringEventService
+            MonitoringEventService monitoringEventService,
+            OperationActionLogService operationActionLogService
     ) {
         this.transferRequestRepository = transferRequestRepository;
         this.transferHistoryRepository = transferHistoryRepository;
@@ -70,6 +75,7 @@ public class TransferRequestService {
         this.routingService = routingService;
         this.timeProvider = timeProvider;
         this.monitoringEventService = monitoringEventService;
+        this.operationActionLogService = operationActionLogService;
     }
 
     @Transactional
@@ -177,6 +183,15 @@ public class TransferRequestService {
 
     @Transactional
     public CancelTransferRequestResponse cancel(Long requestId, CancelTransferRequestRequest request) {
+        return cancel(requestId, request, null);
+    }
+
+    @Transactional
+    public CancelTransferRequestResponse cancel(
+            Long requestId,
+            CancelTransferRequestRequest request,
+            String operatorId
+    ) {
         TransferRequest transferRequest = getRequest(requestId);
         TransferRequestStatus previousStatus = transferRequest.getStatus();
         String reason = request == null || request.reason() == null || request.reason().isBlank()
@@ -185,6 +200,13 @@ public class TransferRequestService {
         OffsetDateTime now = timeProvider.now();
 
         transferRequest.cancel(reason, now);
+        operationActionLogService.record(
+                OperationActionType.TRANSFER_CANCELED,
+                OperationTargetType.TRANSFER,
+                String.valueOf(requestId),
+                operatorId,
+                reason
+        );
         if (previousStatus == TransferRequestStatus.ASSIGNED && transferRequest.getAssignedOhtId() != null) {
             Oht oht = getOht(transferRequest.getAssignedOhtId());
             oht.release(now);

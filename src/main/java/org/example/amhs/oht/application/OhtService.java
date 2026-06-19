@@ -13,6 +13,9 @@ import org.example.amhs.oht.domain.OhtStatus;
 import org.example.amhs.oht.dto.OhtDetailResponse;
 import org.example.amhs.oht.dto.OhtResponse;
 import org.example.amhs.oht.repository.OhtRepository;
+import org.example.amhs.operations.application.OperationActionLogService;
+import org.example.amhs.operations.domain.OperationActionType;
+import org.example.amhs.operations.domain.OperationTargetType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,15 +25,18 @@ public class OhtService {
     private final OhtRepository ohtRepository;
     private final TimeProvider timeProvider;
     private final MonitoringEventService monitoringEventService;
+    private final OperationActionLogService operationActionLogService;
 
     public OhtService(
             OhtRepository ohtRepository,
             TimeProvider timeProvider,
-            MonitoringEventService monitoringEventService
+            MonitoringEventService monitoringEventService,
+            OperationActionLogService operationActionLogService
     ) {
         this.ohtRepository = ohtRepository;
         this.timeProvider = timeProvider;
         this.monitoringEventService = monitoringEventService;
+        this.operationActionLogService = operationActionLogService;
     }
 
     @Transactional(readOnly = true)
@@ -55,9 +61,21 @@ public class OhtService {
 
     @Transactional
     public OhtResponse markError(String ohtId) {
+        return markError(ohtId, null);
+    }
+
+    @Transactional
+    public OhtResponse markError(String ohtId, String operatorId) {
         Oht oht = getOhtEntity(ohtId);
         var now = timeProvider.now();
         oht.markError(now);
+        operationActionLogService.record(
+                OperationActionType.OHT_MARKED_ERROR,
+                OperationTargetType.OHT,
+                ohtId,
+                operatorId,
+                "운영자 오류 처리"
+        );
         monitoringEventService.publishAfterCommit(
                 DomainEventType.OHT_ERROR_OCCURRED,
                 now,
@@ -73,9 +91,21 @@ public class OhtService {
 
     @Transactional
     public OhtResponse recover(String ohtId) {
+        return recover(ohtId, null);
+    }
+
+    @Transactional
+    public OhtResponse recover(String ohtId, String operatorId) {
         Oht oht = getOhtEntity(ohtId);
         var now = timeProvider.now();
         oht.recover(now);
+        operationActionLogService.record(
+                OperationActionType.OHT_RECOVERED,
+                OperationTargetType.OHT,
+                ohtId,
+                operatorId,
+                "운영자 복구 처리"
+        );
         monitoringEventService.publishAfterCommit(
                 DomainEventType.OHT_RECOVERED,
                 now,
