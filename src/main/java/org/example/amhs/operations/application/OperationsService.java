@@ -12,9 +12,11 @@ import org.example.amhs.operations.dto.OperationsOhtIssueResponse;
 import org.example.amhs.operations.dto.OperationsOverviewResponse;
 import org.example.amhs.operations.dto.OperationsProblemTransferResponse;
 import org.example.amhs.operations.dto.OperationsStatusCountResponse;
-import org.example.amhs.transfer.domain.TransferRequest;
 import org.example.amhs.transfer.domain.TransferRequestStatus;
 import org.example.amhs.transfer.repository.TransferRequestRepository;
+import org.example.amhs.transfer.repository.TransferRequestRepository.TransferStatusSummary;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,18 +40,17 @@ public class OperationsService {
     @Transactional(readOnly = true)
     public OperationsOverviewResponse getOverview(int limit) {
         int normalizedLimit = Math.max(1, Math.min(limit, 100));
-        List<TransferRequest> transfers = transferRequestRepository.findAll();
         List<Oht> ohts = ohtRepository.findAll();
         List<FabEdge> edges = fabEdgeRepository.findAll();
 
-        List<OperationsProblemTransferResponse> recentProblemTransfers = transfers.stream()
-                .filter(request -> request.getStatus() == TransferRequestStatus.FAILED
-                        || request.getStatus() == TransferRequestStatus.CANCELED)
-                .sorted(Comparator.comparing(
-                        TransferRequest::getCompletedAt,
-                        Comparator.nullsLast(Comparator.reverseOrder())
-                ))
-                .limit(normalizedLimit)
+        List<OperationsProblemTransferResponse> recentProblemTransfers = transferRequestRepository.findByStatusIn(
+                        List.of(TransferRequestStatus.FAILED, TransferRequestStatus.CANCELED),
+                        PageRequest.of(0, normalizedLimit, Sort.by(
+                                Sort.Order.desc("completedAt"),
+                                Sort.Order.desc("requestId")
+                        ))
+                )
+                .stream()
                 .map(OperationsProblemTransferResponse::from)
                 .toList();
 
@@ -66,42 +67,34 @@ public class OperationsService {
                 .toList();
 
         return new OperationsOverviewResponse(
-                toCounts(transfers, ohts, edges),
+                toCounts(),
                 recentProblemTransfers,
                 abnormalOhts,
                 blockedEdges
         );
     }
 
-    private OperationsStatusCountResponse toCounts(
-            List<TransferRequest> transfers,
-            List<Oht> ohts,
-            List<FabEdge> edges
-    ) {
+    private OperationsStatusCountResponse toCounts() {
+        TransferStatusSummary transferCounts = transferRequestRepository.summarizeStatusCounts();
         return new OperationsStatusCountResponse(
-                countTransfers(transfers, TransferRequestStatus.WAITING),
-                countTransfers(transfers, TransferRequestStatus.ASSIGNED),
-                countTransfers(transfers, TransferRequestStatus.MOVING),
-                countTransfers(transfers, TransferRequestStatus.COMPLETED),
-                countTransfers(transfers, TransferRequestStatus.FAILED),
-                countTransfers(transfers, TransferRequestStatus.CANCELED),
-                countOhts(ohts, OhtStatus.IDLE),
-                countOhts(ohts, OhtStatus.RESERVED),
-                countOhts(ohts, OhtStatus.MOVING),
-                countOhts(ohts, OhtStatus.ERROR),
-                edges.stream().filter(FabEdge::isBlocked).count()
+                numberOrZero(transferCounts.getWaitingTransfers()),
+                numberOrZero(transferCounts.getAssignedTransfers()),
+                numberOrZero(transferCounts.getMovingTransfers()),
+                numberOrZero(transferCounts.getCompletedTransfers()),
+                numberOrZero(transferCounts.getFailedTransfers()),
+                numberOrZero(transferCounts.getCanceledTransfers()),
+                ohtRepository.countByStatus(OhtStatus.IDLE),
+                ohtRepository.countByStatus(OhtStatus.RESERVED),
+                ohtRepository.countByStatus(OhtStatus.MOVING),
+                ohtRepository.countByStatus(OhtStatus.ERROR),
+                fabEdgeRepository.countByBlocked(true)
         );
     }
 
-    private long countTransfers(List<TransferRequest> transfers, TransferRequestStatus status) {
-        return transfers.stream()
-                .filter(request -> request.getStatus() == status)
-                .count();
-    }
-
-    private long countOhts(List<Oht> ohts, OhtStatus status) {
-        return ohts.stream()
-                .filter(oht -> oht.getStatus() == status)
-                .count();
+    private long numberOrZero(Number value) {
+        if (value == null) {
+            return 0;
+        }
+        return value.longValue();
     }
 }

@@ -7,13 +7,22 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import org.example.amhs.common.exception.InvalidStateTransitionException;
 
 @Entity
-@Table(name = "transfer_request")
+@Table(
+        name = "transfer_request",
+        indexes = {
+                @Index(name = "idx_transfer_request_status_requested_at", columnList = "status, requested_at"),
+                @Index(name = "idx_transfer_request_requested_at", columnList = "requested_at"),
+                @Index(name = "idx_transfer_request_assigned_oht_requested_at", columnList = "assigned_oht_id, requested_at"),
+                @Index(name = "idx_transfer_request_completed_at", columnList = "completed_at")
+        }
+)
 public class TransferRequest {
 
     @Id

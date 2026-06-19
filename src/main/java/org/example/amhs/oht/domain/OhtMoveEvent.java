@@ -3,11 +3,19 @@ package org.example.amhs.oht.domain;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "oht_move_event")
+@Table(
+        name = "oht_move_event",
+        indexes = {
+                @Index(name = "idx_oht_move_event_occurred_at", columnList = "occurred_at"),
+                @Index(name = "idx_oht_move_event_edge_occurred_at", columnList = "edge_id, occurred_at"),
+                @Index(name = "idx_oht_move_event_request_occurred_at", columnList = "request_id, occurred_at")
+        }
+)
 public class OhtMoveEvent {
 
     @Id

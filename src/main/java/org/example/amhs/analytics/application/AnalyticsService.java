@@ -15,11 +15,15 @@ import org.example.amhs.oht.repository.OhtMoveEventRepository;
 import org.example.amhs.transfer.domain.TransferRequest;
 import org.example.amhs.transfer.domain.TransferRequestStatus;
 import org.example.amhs.transfer.repository.TransferRequestRepository;
+import org.example.amhs.transfer.repository.TransferRequestRepository.TransferRequestSummary;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AnalyticsService {
+
+    private static final OffsetDateTime DEFAULT_FROM = OffsetDateTime.parse("1900-01-01T00:00:00Z");
+    private static final OffsetDateTime DEFAULT_TO = OffsetDateTime.parse("9999-12-31T23:59:59Z");
 
     private final TransferRequestRepository transferRequestRepository;
     private final OhtMoveEventRepository ohtMoveEventRepository;
@@ -37,20 +41,19 @@ public class AnalyticsService {
 
     @Transactional(readOnly = true)
     public AnalyticsSummaryResponse getSummary(OffsetDateTime from, OffsetDateTime to) {
-        List<TransferRequest> requests = transferRequestRepository.findAll().stream()
-                .filter(request -> isInRange(request.getRequestedAt(), from, to))
-                .toList();
-        List<Long> completedDurations = requests.stream()
-                .filter(request -> request.getStatus() == TransferRequestStatus.COMPLETED)
+        OffsetDateTime normalizedFrom = normalizeFrom(from);
+        OffsetDateTime normalizedTo = normalizeTo(to);
+        TransferRequestSummary counts = transferRequestRepository.summarizeCounts(normalizedFrom, normalizedTo);
+        List<Long> completedDurations = transferRequestRepository.findCompletedForAnalytics(normalizedFrom, normalizedTo).stream()
                 .map(this::transferSeconds)
                 .filter(Objects::nonNull)
                 .sorted()
                 .toList();
 
-        long totalRequests = requests.size();
-        long completedRequests = countByStatus(requests, TransferRequestStatus.COMPLETED);
-        long failedRequests = countByStatus(requests, TransferRequestStatus.FAILED);
-        long canceledRequests = countByStatus(requests, TransferRequestStatus.CANCELED);
+        long totalRequests = numberOrZero(counts.getTotalRequests());
+        long completedRequests = numberOrZero(counts.getCompletedRequests());
+        long failedRequests = numberOrZero(counts.getFailedRequests());
+        long canceledRequests = numberOrZero(counts.getCanceledRequests());
         long delayedRequests = completedDurations.stream()
                 .filter(seconds -> seconds > amhsProperties.analytics().delayThresholdSeconds())
                 .count();
@@ -133,6 +136,21 @@ public class AnalyticsService {
         return requests.stream()
                 .filter(request -> request.getStatus() == status)
                 .count();
+    }
+
+    private long numberOrZero(Number value) {
+        if (value == null) {
+            return 0;
+        }
+        return value.longValue();
+    }
+
+    private OffsetDateTime normalizeFrom(OffsetDateTime from) {
+        return from == null ? DEFAULT_FROM : from;
+    }
+
+    private OffsetDateTime normalizeTo(OffsetDateTime to) {
+        return to == null ? DEFAULT_TO : to;
     }
 
     private Long transferSeconds(TransferRequest request) {

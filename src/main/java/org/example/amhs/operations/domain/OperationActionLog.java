@@ -7,11 +7,19 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
 
 @Entity
-@Table(name = "operation_action_log")
+@Table(
+        name = "operation_action_log",
+        indexes = {
+                @Index(name = "idx_operation_action_log_created_at_id", columnList = "created_at, action_log_id"),
+                @Index(name = "idx_operation_action_log_operator_created_at", columnList = "operator_id, created_at"),
+                @Index(name = "idx_operation_action_log_action_created_at", columnList = "action_type, created_at")
+        }
+)
 public class OperationActionLog {
 
     @Id
