@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 public class DemoMonitoringService {
 
     private static final Logger log = LoggerFactory.getLogger(DemoMonitoringService.class);
-    private static final List<String> OHT_IDS = List.of("OHT-01", "OHT-02", "OHT-03", "OHT-04");
+    private static final List<String> OHT_IDS = List.of("OHT-01", "OHT-02", "OHT-03");
     private static final List<String> NODE_IDS = List.of(
             "STOCKER-A", "STOCKER-B", "EQP-01", "EQP-02", "JUNCTION-01", "JUNCTION-02", "CHARGER-01"
     );
