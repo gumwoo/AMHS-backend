@@ -7,6 +7,9 @@ import org.example.amhs.operations.domain.OperationActionType;
 import org.example.amhs.operations.domain.OperationTargetType;
 import org.example.amhs.operations.dto.OperationActionLogResponse;
 import org.example.amhs.operations.repository.OperationActionLogRepository;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,5 +58,74 @@ public class OperationActionLogService {
                 .stream()
                 .map(OperationActionLogResponse::from)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<OperationActionLogResponse> searchLogs(
+            String operatorId,
+            OperationActionType actionType,
+            String targetId,
+            int limit
+    ) {
+        int normalizedLimit = Math.min(Math.max(limit, 1), 100);
+        Specification<OperationActionLog> spec = buildSearchSpec(
+                blankToNull(operatorId),
+                actionType,
+                blankToNull(targetId)
+        );
+        return operationActionLogRepository.findAll(
+                        spec,
+                        PageRequest.of(0, normalizedLimit, Sort.by(
+                                Sort.Order.desc("createdAt"),
+                                Sort.Order.desc("actionLogId")
+                        ))
+                )
+                .stream()
+                .map(OperationActionLogResponse::from)
+                .toList();
+    }
+
+    private String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private Specification<OperationActionLog> buildSearchSpec(
+            String operatorId,
+            OperationActionType actionType,
+            String targetId
+    ) {
+        Specification<OperationActionLog> spec = null;
+        spec = appendSpec(spec, operatorIdEquals(operatorId));
+        spec = appendSpec(spec, actionTypeEquals(actionType));
+        spec = appendSpec(spec, targetIdContains(targetId));
+        return spec;
+    }
+
+    private Specification<OperationActionLog> appendSpec(
+            Specification<OperationActionLog> current,
+            Specification<OperationActionLog> next
+    ) {
+        if (next == null) {
+            return current;
+        }
+        return current == null ? next : current.and(next);
+    }
+
+    private Specification<OperationActionLog> operatorIdEquals(String operatorId) {
+        return operatorId == null ? null : (root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("operatorId"), operatorId);
+    }
+
+    private Specification<OperationActionLog> actionTypeEquals(OperationActionType actionType) {
+        return actionType == null ? null : (root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("actionType"), actionType);
+    }
+
+    private Specification<OperationActionLog> targetIdContains(String targetId) {
+        return targetId == null ? null : (root, query, criteriaBuilder) ->
+                criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("targetId")),
+                        "%" + targetId.toLowerCase() + "%"
+                );
     }
 }

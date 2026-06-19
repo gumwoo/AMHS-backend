@@ -4,6 +4,7 @@ import org.example.amhs.common.response.ApiResponse;
 import java.util.List;
 import org.example.amhs.operations.application.OperationActionLogService;
 import org.example.amhs.operations.application.OperationsService;
+import org.example.amhs.operations.domain.OperationActionType;
 import org.example.amhs.operations.dto.OperationActionLogResponse;
 import org.example.amhs.operations.dto.OperationsOverviewResponse;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,7 +35,12 @@ public class OperationsController {
     }
 
     @GetMapping("/action-logs")
-    public ApiResponse<List<OperationActionLogResponse>> getActionLogs() {
-        return ApiResponse.ok(operationActionLogService.getRecentLogs());
+    public ApiResponse<List<OperationActionLogResponse>> getActionLogs(
+            @RequestParam(required = false) String operatorId,
+            @RequestParam(required = false) OperationActionType actionType,
+            @RequestParam(required = false) String targetId,
+            @RequestParam(defaultValue = "20") int limit
+    ) {
+        return ApiResponse.ok(operationActionLogService.searchLogs(operatorId, actionType, targetId, limit));
     }
 }
