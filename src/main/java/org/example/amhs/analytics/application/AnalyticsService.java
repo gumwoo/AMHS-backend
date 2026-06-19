@@ -73,11 +73,9 @@ public class AnalyticsService {
 
     @Transactional(readOnly = true)
     public List<OhtThroughputResponse> getOhtThroughput(OffsetDateTime from, OffsetDateTime to) {
-        return transferRequestRepository.findAll().stream()
-                .filter(request -> isInRange(request.getRequestedAt(), from, to))
-                .filter(request -> request.getAssignedOhtId() != null)
-                .filter(request -> request.getStatus() == TransferRequestStatus.COMPLETED
-                        || request.getStatus() == TransferRequestStatus.FAILED)
+        OffsetDateTime normalizedFrom = normalizeFrom(from);
+        OffsetDateTime normalizedTo = normalizeTo(to);
+        return transferRequestRepository.findOhtThroughputTargets(normalizedFrom, normalizedTo).stream()
                 .collect(Collectors.groupingBy(TransferRequest::getAssignedOhtId))
                 .entrySet()
                 .stream()
@@ -89,8 +87,9 @@ public class AnalyticsService {
 
     @Transactional(readOnly = true)
     public List<BottleneckResponse> getBottlenecks(OffsetDateTime from, OffsetDateTime to, int limit) {
-        return ohtMoveEventRepository.findAll().stream()
-                .filter(event -> isInRange(event.getOccurredAt(), from, to))
+        OffsetDateTime normalizedFrom = normalizeFrom(from);
+        OffsetDateTime normalizedTo = normalizeTo(to);
+        return ohtMoveEventRepository.findForBottleneckAnalytics(normalizedFrom, normalizedTo).stream()
                 .collect(Collectors.groupingBy(BottleneckKey::from))
                 .entrySet()
                 .stream()
@@ -158,14 +157,6 @@ public class AnalyticsService {
             return null;
         }
         return Duration.between(request.getRequestedAt(), request.getCompletedAt()).toSeconds();
-    }
-
-    private boolean isInRange(OffsetDateTime occurredAt, OffsetDateTime from, OffsetDateTime to) {
-        if (occurredAt == null) {
-            return false;
-        }
-        return (from == null || !occurredAt.isBefore(from))
-                && (to == null || !occurredAt.isAfter(to));
     }
 
     private double rate(long numerator, long denominator) {

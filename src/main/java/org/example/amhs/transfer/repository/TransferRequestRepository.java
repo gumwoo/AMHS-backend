@@ -1,7 +1,7 @@
 package org.example.amhs.transfer.repository;
 
-import java.util.List;
 import java.time.OffsetDateTime;
+import java.util.List;
 import org.example.amhs.transfer.domain.TransferRequest;
 import org.example.amhs.transfer.domain.TransferRequestStatus;
 import org.springframework.data.domain.Pageable;
@@ -56,6 +56,22 @@ public interface TransferRequestRepository extends JpaRepository<TransferRequest
               and t.requestedAt <= :to
             """)
     List<TransferRequest> findCompletedForAnalytics(
+            @Param("from") OffsetDateTime from,
+            @Param("to") OffsetDateTime to
+    );
+
+    @Query("""
+            select t
+            from TransferRequest t
+            where t.assignedOhtId is not null
+              and t.status in (
+                  org.example.amhs.transfer.domain.TransferRequestStatus.COMPLETED,
+                  org.example.amhs.transfer.domain.TransferRequestStatus.FAILED
+              )
+              and t.requestedAt >= :from
+              and t.requestedAt <= :to
+            """)
+    List<TransferRequest> findOhtThroughputTargets(
             @Param("from") OffsetDateTime from,
             @Param("to") OffsetDateTime to
     );

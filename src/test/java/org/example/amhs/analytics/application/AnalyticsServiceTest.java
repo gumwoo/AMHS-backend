@@ -66,8 +66,9 @@ class AnalyticsServiceTest {
         saveCompletedRequest("OHT-01", 100);
         saveFailedRequest("OHT-01");
         saveCompletedRequest("OHT-02", 60);
+        saveCompletedRequest("OHT-03", baseTime.plusDays(2), 40);
 
-        var responses = analyticsService.getOhtThroughput(null, null);
+        var responses = analyticsService.getOhtThroughput(baseTime.minusMinutes(1), baseTime.plusMinutes(10));
 
         assertThat(responses).hasSize(2);
         assertThat(responses.get(0).ohtId()).isEqualTo("OHT-01");
@@ -87,8 +88,11 @@ class AnalyticsServiceTest {
         ohtMoveEventRepository.save(new OhtMoveEvent(
                 "evt-003", "OHT-03", 3L, "B", "C", "EDGE-002", baseTime.plusSeconds(2), 90
         ));
+        ohtMoveEventRepository.save(new OhtMoveEvent(
+                "evt-004", "OHT-04", 4L, "C", "D", "EDGE-003", baseTime.plusDays(2), 300
+        ));
 
-        var responses = analyticsService.getBottlenecks(null, null, 10);
+        var responses = analyticsService.getBottlenecks(baseTime.minusMinutes(1), baseTime.plusMinutes(10), 10);
 
         assertThat(responses).hasSize(2);
         assertThat(responses.get(0).edgeId()).isEqualTo("EDGE-001");
@@ -99,15 +103,19 @@ class AnalyticsServiceTest {
     }
 
     private void saveCompletedRequest(String ohtId, long elapsedSeconds) {
+        saveCompletedRequest(ohtId, baseTime, elapsedSeconds);
+    }
+
+    private void saveCompletedRequest(String ohtId, OffsetDateTime requestedAt, long elapsedSeconds) {
         TransferRequest request = TransferRequest.create(
                 "STOCKER-A",
                 "EQP-01",
                 TransferPriority.NORMAL,
-                baseTime
+                requestedAt
         );
-        request.assign(ohtId, baseTime.plusSeconds(1));
-        request.startMoving(baseTime.plusSeconds(2));
-        request.complete(baseTime.plusSeconds(elapsedSeconds));
+        request.assign(ohtId, requestedAt.plusSeconds(1));
+        request.startMoving(requestedAt.plusSeconds(2));
+        request.complete(requestedAt.plusSeconds(elapsedSeconds));
         transferRequestRepository.save(request);
     }
 
