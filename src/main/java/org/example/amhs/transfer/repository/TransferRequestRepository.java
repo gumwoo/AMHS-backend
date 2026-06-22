@@ -20,6 +20,23 @@ public interface TransferRequestRepository extends JpaRepository<TransferRequest
     List<TransferRequest> findByStatusIn(List<TransferRequestStatus> statuses, Pageable pageable);
 
     @Query("""
+            select t
+            from TransferRequest t
+            where t.status = org.example.amhs.transfer.domain.TransferRequestStatus.WAITING
+            order by
+                case t.priority
+                    when org.example.amhs.transfer.domain.TransferPriority.URGENT then 1
+                    when org.example.amhs.transfer.domain.TransferPriority.HIGH then 2
+                    when org.example.amhs.transfer.domain.TransferPriority.NORMAL then 3
+                    when org.example.amhs.transfer.domain.TransferPriority.LOW then 4
+                    else 5
+                end,
+                t.requestedAt asc,
+                t.requestId asc
+            """)
+    List<TransferRequest> findSchedulableRequests(Pageable pageable);
+
+    @Query("""
             select
                 count(t) as totalRequests,
                 sum(case when t.status = org.example.amhs.transfer.domain.TransferRequestStatus.COMPLETED then 1 else 0 end) as completedRequests,
